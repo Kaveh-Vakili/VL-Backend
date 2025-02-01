@@ -5,6 +5,6 @@ export interface IDocument extends Document {
   description: string;
   fileName: string;
   fileType: string;
-  content: string;
+  content?: string;
   uploadDate: Date;
 }
