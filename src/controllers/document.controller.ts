@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import Document from '../models/document.model';
+import { convertToHtml } from 'mammoth';
+import path from 'path';
 
 export class DocumentController {
 // src/controllers/document.controller.ts
@@ -54,20 +56,38 @@ public static async uploadDocument(req: Request, res: Response) {
             res.status(500).json({ error: 'Failed to fetch documents' });
         }
     }
-
-    public static async getDocument(req: Request, res: Response) {
-        try {
-            const document = await Document.findById(req.params.id);
-            if (!document) {
-                res.status(404).json({ error: 'Document not found' });
-                return;
-            }
-            res.json(document);
-        } catch (error) {
-            console.error('Fetch error:', error);
-            res.status(500).json({ error: 'Failed to fetch document' });
+// In your document.controller.ts
+public static async getDocument(req: Request, res: Response) {
+    try {
+        const document = await Document.findById(req.params.id);
+        
+        if (!document) {
+            return res.status(404).json({ error: 'Document not found' });
         }
+
+        if (!document.fileName) {
+            return res.status(400).json({ error: 'Type "string" has no properties in common with type "Options".' });
+        }
+
+        // Convert document content to HTML
+        const htmlContent = await convertToHtml({
+            path: path.join(__dirname, '../../uploads', document.fileName)
+        });
+
+        res.json({
+            _id: document._id,
+            title: document.title,
+            content: htmlContent,
+            fileName: document.fileName
+        });
+    } catch (error: any) {
+        console.error('Get document error:', error);
+        res.status(500).json({
+            error: 'Failed to fetch document',
+            details: error.message
+        });
     }
+}
 
     public static async searchDocuments(req: Request, res: Response) {
         try {
